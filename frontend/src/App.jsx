@@ -17,7 +17,10 @@ const systemImages = {
 const defaultImage =
   'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(
+  /\/$/,
+  '',
+)
 const buildApiUrl = (path) => {
   if (!path) {
     return API_BASE_URL
