@@ -17,6 +17,17 @@ const systemImages = {
 const defaultImage =
   'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+const buildApiUrl = (path) => {
+  if (!path) {
+    return API_BASE_URL
+  }
+  if (path.startsWith('/')) {
+    return `${API_BASE_URL}${path}`
+  }
+  return `${API_BASE_URL}/${path}`
+}
+
 const getDiscordAvatarUrl = (account) => {
   if (!account?.id) {
     return null
@@ -239,7 +250,7 @@ function App() {
 
     async function loadTables() {
       try {
-        const response = await fetch('http://localhost:4000/api/tables')
+        const response = await fetch(buildApiUrl('/api/tables'))
         if (!response.ok) {
           throw new Error('API non disponible')
         }
@@ -282,7 +293,7 @@ function App() {
       missing.map(async (tableId) => {
         try {
           const response = await fetch(
-            `http://localhost:4000/api/tables/${tableId}/chat`,
+            buildApiUrl(`/api/tables/${tableId}/chat`),
           )
           if (!response.ok) {
             return null
@@ -315,19 +326,16 @@ function App() {
     const authorName = user?.displayName || user?.name || 'Utilisateur'
     const authorAvatar = getDiscordAvatarUrl(user)
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/tables/${tableId}/chat`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user?.id,
-            name: authorName,
-            avatarUrl: authorAvatar,
-            text,
-          }),
-        },
-      )
+      const response = await fetch(buildApiUrl(`/api/tables/${tableId}/chat`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          name: authorName,
+          avatarUrl: authorAvatar,
+          text,
+        }),
+      })
       if (!response.ok) {
         throw new Error('Chat send failed')
       }
@@ -362,7 +370,7 @@ function App() {
     async function loadGames() {
       try {
         setGamesLoading(true)
-        const response = await fetch('http://localhost:4000/api/games')
+        const response = await fetch(buildApiUrl('/api/games'))
         if (!response.ok) {
           throw new Error('API jeux indisponible')
         }
@@ -463,7 +471,7 @@ function App() {
     async function loadCampaignUsers() {
       try {
         setCampaignUsersLoading(true)
-        const response = await fetch('http://localhost:4000/api/users')
+        const response = await fetch(buildApiUrl('/api/users'))
         if (!response.ok) {
           throw new Error('Users fetch failed')
         }
@@ -673,19 +681,16 @@ function App() {
   const handleJoin = async (tableId) => {
     try {
       setJoiningId(tableId)
-      const response = await fetch(
-        `http://localhost:4000/api/tables/${tableId}/join`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user?.id,
-            name: user?.name,
-            displayName: user?.displayName || user?.name,
-            avatarUrl: userAvatarUrl || '',
-          }),
-        },
-      )
+      const response = await fetch(buildApiUrl(`/api/tables/${tableId}/join`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          name: user?.name,
+          displayName: user?.displayName || user?.name,
+          avatarUrl: userAvatarUrl || '',
+        }),
+      })
       if (!response.ok) {
         throw new Error('Join failed')
       }
@@ -703,14 +708,11 @@ function App() {
   const handleLeave = async (tableId) => {
     try {
       setJoiningId(tableId)
-      const response = await fetch(
-        `http://localhost:4000/api/tables/${tableId}/leave`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user?.id }),
-        },
-      )
+      const response = await fetch(buildApiUrl(`/api/tables/${tableId}/leave`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id }),
+      })
       if (!response.ok) {
         throw new Error('Leave failed')
       }
@@ -728,7 +730,7 @@ function App() {
   const handleValidate = async (tableId, targetUserId) => {
     try {
       const response = await fetch(
-        `http://localhost:4000/api/tables/${tableId}/validate`,
+        buildApiUrl(`/api/tables/${tableId}/validate`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -750,7 +752,7 @@ function App() {
   const handleCancelTable = async (tableId) => {
     try {
       const response = await fetch(
-        `http://localhost:4000/api/tables/${tableId}/cancel`,
+        buildApiUrl(`/api/tables/${tableId}/cancel`),
         {
           method: 'POST',
         },
@@ -772,9 +774,7 @@ function App() {
       return
     }
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/tables/${tableId}/chat`,
-      )
+      const response = await fetch(buildApiUrl(`/api/tables/${tableId}/chat`))
       if (!response.ok) {
         return
       }
@@ -830,7 +830,7 @@ function App() {
         description: formState.description,
         image,
       }
-      const response = await fetch('http://localhost:4000/api/tables', {
+      const response = await fetch(buildApiUrl('/api/tables'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -853,7 +853,7 @@ function App() {
     const name = newGameName.trim()
     if (!name) return
     try {
-      const response = await fetch('http://localhost:4000/api/games', {
+      const response = await fetch(buildApiUrl('/api/games'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
@@ -874,10 +874,9 @@ function App() {
 
   const handleDeleteGame = async (gameId) => {
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/games/${gameId}`,
-        { method: 'DELETE' },
-      )
+      const response = await fetch(buildApiUrl(`/api/games/${gameId}`), {
+        method: 'DELETE',
+      })
       if (!response.ok && response.status !== 204) {
         throw new Error('Delete game failed')
       }
@@ -893,7 +892,7 @@ function App() {
       const data = new FormData()
       data.append('image', file)
       const response = await fetch(
-        `http://localhost:4000/api/games/${gameId}/images`,
+        buildApiUrl(`/api/games/${gameId}/images`),
         { method: 'POST', body: data },
       )
       if (!response.ok) {
@@ -1056,7 +1055,7 @@ function App() {
             session et suivre les disponibilités en temps réel.
           </p>
           <a
-            href="http://localhost:4000/auth/discord"
+            href={buildApiUrl('/auth/discord')}
             className="mt-8 flex h-12 w-full max-w-xs items-center justify-center rounded-full bg-[#5865F2] text-sm font-bold text-white shadow-[0_0_20px_rgba(88,101,242,0.35)]"
           >
             Connexion Discord
