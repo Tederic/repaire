@@ -17,25 +17,38 @@ const systemImages = {
 const defaultImage =
   'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(
   /\/$/,
   '',
 )
-const buildApiUrl = (path) => {
-  if (!path) {
+const resolveApiBaseUrl = () => {
+  if (API_BASE_URL) {
+    if (
+      typeof window !== 'undefined' &&
+      API_BASE_URL === window.location.origin
+    ) {
+      return '/api'
+    }
     return API_BASE_URL
   }
-  if (path.startsWith('/')) {
-    return `${API_BASE_URL}${path}`
+  return '/api'
+}
+const buildApiUrl = (path) => {
+  const baseUrl = resolveApiBaseUrl()
+  if (!path) {
+    return baseUrl
   }
-  return `${API_BASE_URL}/${path}`
+  if (path.startsWith('/')) {
+    return `${baseUrl}${path}`
+  }
+  return `${baseUrl}/${path}`
 }
 const buildAssetUrl = (url) => {
   if (!url) {
     return url
   }
   if (url.startsWith('/uploads/')) {
-    return `${API_BASE_URL}${url}`
+    return `${resolveApiBaseUrl()}${url}`
   }
   return url
 }
