@@ -17,7 +17,7 @@ const systemImages = {
 const defaultImage =
   'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 const buildApiUrl = (path) => {
   if (!path) {
     return API_BASE_URL
@@ -26,6 +26,15 @@ const buildApiUrl = (path) => {
     return `${API_BASE_URL}${path}`
   }
   return `${API_BASE_URL}/${path}`
+}
+const buildAssetUrl = (url) => {
+  if (!url) {
+    return url
+  }
+  if (url.startsWith('/uploads/')) {
+    return `${API_BASE_URL}${url}`
+  }
+  return url
 }
 
 const getDiscordAvatarUrl = (account) => {
@@ -1155,7 +1164,9 @@ function App() {
                     >
                       <div
                         className="relative h-[240px] w-full bg-cover bg-center"
-                        style={{ backgroundImage: `url("${table.image}")` }}
+                        style={{
+                          backgroundImage: `url("${buildAssetUrl(table.image)}")`,
+                        }}
                       >
                         <div className="tavern-gradient absolute inset-0"></div>
                         <div className="absolute right-4 top-4 flex min-w-[70px] flex-col items-center rounded-xl border border-white/10 bg-background-dark/80 p-2.5 backdrop-blur-md">
@@ -1948,7 +1959,7 @@ function App() {
                                 <img
                                   alt={`Vignette ${game.name}`}
                                   className="h-24 w-full object-cover"
-                                  src={imageUrl}
+                                  src={buildAssetUrl(imageUrl)}
                                 />
                               </div>
                             ))}
@@ -2148,7 +2159,7 @@ function App() {
                           <img
                             alt="Vignette"
                             className="h-24 w-full object-cover"
-                            src={imageUrl}
+                            src={buildAssetUrl(imageUrl)}
                           />
                         </button>
                       ))}

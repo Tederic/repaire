@@ -9,9 +9,11 @@ const app = express()
 const port = process.env.PORT || 4000
 const discordClientId = process.env.DISCORD_CLIENT_ID
 const discordClientSecret = process.env.DISCORD_CLIENT_SECRET
-const discordRedirectUri =
-  process.env.DISCORD_REDIRECT_URI || 'http://localhost:4000/auth/discord/callback'
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+const getDiscordRedirectUri = (req) =>
+  process.env.DISCORD_REDIRECT_URI ||
+  `${req.protocol}://${req.get('host')}/auth/discord/callback`
+const getFrontendUrl = (req) =>
+  process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`
 const discordGuildId = process.env.DISCORD_GUILD_ID
 const discordBotToken = process.env.DISCORD_BOT_TOKEN
 const discordAdminRoleId = process.env.DISCORD_ADMIN_ROLE_ID
@@ -150,6 +152,17 @@ let games = []
 let chats = {}
 let users = []
 
+const normalizeUploadUrl = (value) => {
+  if (typeof value !== 'string') {
+    return value
+  }
+  const index = value.indexOf('/uploads/')
+  if (index === -1) {
+    return value
+  }
+  return value.slice(index)
+}
+
 const loadData = () => {
   if (!fs.existsSync(dataFile)) {
     games = defaultGames.map((game) => ({ ...game }))
@@ -160,9 +173,19 @@ const loadData = () => {
     const raw = fs.readFileSync(dataFile, 'utf-8')
     const parsed = JSON.parse(raw)
     games = Array.isArray(parsed.games)
-      ? parsed.games
+      ? parsed.games.map((game) => ({
+          ...game,
+          images: Array.isArray(game.images)
+            ? game.images.map(normalizeUploadUrl)
+            : [],
+        }))
       : defaultGames.map((game) => ({ ...game }))
-    tables = Array.isArray(parsed.tables) ? parsed.tables : []
+    tables = Array.isArray(parsed.tables)
+      ? parsed.tables.map((table) => ({
+          ...table,
+          image: normalizeUploadUrl(table.image),
+        }))
+      : []
     chats =
       parsed.chats && typeof parsed.chats === 'object' ? parsed.chats : {}
     users = Array.isArray(parsed.users) ? parsed.users : []
@@ -257,9 +280,7 @@ app.post('/api/games/:id/images', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Image requise.' })
   }
-  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${
-    req.file.filename
-  }`
+  const imageUrl = `/uploads/${req.file.filename}`
   game.images = game.images || []
   game.images.unshift(imageUrl)
   persistData()
@@ -430,6 +451,7 @@ app.get('/auth/discord', (req, res) => {
   if (!discordClientId) {
     return res.status(500).send('Discord OAuth non configuré.')
   }
+  const discordRedirectUri = getDiscordRedirectUri(req)
   const params = new URLSearchParams({
     client_id: discordClientId,
     redirect_uri: discordRedirectUri,
@@ -448,6 +470,8 @@ app.get('/auth/discord/callback', async (req, res) => {
   if (!discordClientId || !discordClientSecret) {
     return res.status(500).send('Discord OAuth non configuré.')
   }
+  const discordRedirectUri = getDiscordRedirectUri(req)
+  const frontendUrl = getFrontendUrl(req)
   try {
     const tokenParams = new URLSearchParams({
       client_id: discordClientId,
