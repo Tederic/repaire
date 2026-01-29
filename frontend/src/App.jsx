@@ -17,21 +17,36 @@ const systemImages = {
 const defaultImage =
   'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(
-  /\/$/,
-  '',
+const normalizeTrailingSlash = (value) => value.replace(/\/+$/, '')
+const stripWww = (hostname) => hostname.replace(/^www\./, '')
+const API_BASE_URL = normalizeTrailingSlash(
+  import.meta.env.VITE_API_BASE_URL || '',
 )
-const resolveApiBaseUrl = () => {
-  if (API_BASE_URL) {
-    if (
-      typeof window !== 'undefined' &&
-      API_BASE_URL === window.location.origin
-    ) {
-      return '/api'
-    }
-    return API_BASE_URL
+const isSameOrigin = (value) => {
+  if (typeof window === 'undefined') {
+    return false
   }
-  return '/api'
+  try {
+    const base = new URL(value, window.location.origin)
+    const origin = new URL(window.location.origin)
+    return (
+      base.protocol === origin.protocol &&
+      base.port === origin.port &&
+      stripWww(base.hostname) === stripWww(origin.hostname)
+    )
+  } catch {
+    return false
+  }
+}
+const resolveApiBaseUrl = () => {
+  if (!API_BASE_URL) {
+    return '/api'
+  }
+  const normalized = normalizeTrailingSlash(API_BASE_URL)
+  if (isSameOrigin(normalized)) {
+    return '/api'
+  }
+  return normalized
 }
 const buildApiUrl = (path) => {
   const baseUrl = resolveApiBaseUrl()
