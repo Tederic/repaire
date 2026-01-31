@@ -823,15 +823,20 @@ function App() {
       return
     }
     try {
-      const response = await fetch(buildApiUrl(`/api/tables/${tableId}`), {
+      let response = await fetch(buildApiUrl(`/api/tables/${tableId}`), {
         method: 'DELETE',
       })
+      if (!response.ok && response.status !== 204) {
+        response = await fetch(buildApiUrl(`/api/tables/${tableId}/delete`), {
+          method: 'POST',
+        })
+      }
       if (!response.ok && response.status !== 204) {
         throw new Error('Delete failed')
       }
       setTables((prev) => prev.filter((table) => table.id !== tableId))
     } catch (error) {
-      // Ignore for MVP
+      window.alert("Suppression impossible. Vérifie que l'API est à jour.")
     }
   }
 
