@@ -1259,6 +1259,25 @@ function App() {
                               <p className="text-sm">{table.time}</p>
                             </div>
                           </div>
+                          <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+                            <span className="rounded-full border border-white/10 bg-[#282520] px-2 py-1">
+                              Âge {table.minAge || 0}+
+                            </span>
+                            {table.triggers?.length ? (
+                              table.triggers.map((trigger) => (
+                                <span
+                                  key={`${table.id}-${trigger}`}
+                                  className="rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-rose-200"
+                                >
+                                  {trigger}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="rounded-full border border-white/10 bg-[#282520] px-2 py-1">
+                                TW: aucun
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="mt-4 flex items-center justify-between gap-4">
                           <div className="flex -space-x-2">
@@ -1378,6 +1397,25 @@ function App() {
                               ? 'Validé'
                               : 'En attente'}
                           </p>
+                          <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+                            <span className="rounded-full border border-white/10 bg-[#282520] px-2 py-1">
+                              Âge {table.minAge || 0}+
+                            </span>
+                            {table.triggers?.length ? (
+                              table.triggers.map((trigger) => (
+                                <span
+                                  key={`${table.id}-tw-${trigger}`}
+                                  className="rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-rose-200"
+                                >
+                                  {trigger}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="rounded-full border border-white/10 bg-[#282520] px-2 py-1">
+                                TW: aucun
+                              </span>
+                            )}
+                          </div>
                           <div className="mt-4 rounded-xl border border-white/10 bg-[#1f1c17] p-3">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                               Chat de la table
@@ -2249,19 +2287,21 @@ function App() {
               </label>
               <label className="text-sm text-slate-300">
                 Âge minimum
-                <input
-                  type="number"
-                  min="0"
+                <select
                   className="mt-1 w-full rounded-lg border border-white/10 bg-[#282520] px-3 py-2 text-white"
                   value={formState.minAge}
                   onChange={(event) =>
                     setFormState((prev) => ({
                       ...prev,
-                      minAge: event.target.value,
+                      minAge: Number(event.target.value),
                     }))
                   }
                   required
-                />
+                >
+                  <option value={12}>12+</option>
+                  <option value={16}>16+</option>
+                  <option value={18}>18+</option>
+                </select>
               </label>
               <div className="rounded-xl border border-white/10 bg-[#221f1a] p-3">
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
