@@ -53,6 +53,9 @@ const buildApiUrl = (path) => {
   if (!path) {
     return baseUrl
   }
+  if (path.startsWith('/api') && baseUrl.endsWith('/api')) {
+    return path
+  }
   if (path.startsWith('/')) {
     return `${baseUrl}${path}`
   }
