@@ -300,11 +300,13 @@ app.post('/api/tables', (req, res) => {
     seatsTotal,
     gm,
     description,
+    minAge = 0,
+    triggers = [],
     image = '',
     level = 'Tous niveaux',
   } = req.body
 
-  if (!date || !time || !game || !type || !seatsTotal || !gm || !description) {
+  if (!date || !time || !game || !type || !seatsTotal || !gm) {
     return res.status(400).json({ error: 'Champs requis manquants.' })
   }
 
@@ -319,7 +321,9 @@ app.post('/api/tables', (req, res) => {
     level,
     gm,
     status: 'open',
-    description,
+    description: description || '',
+    minAge: Number(minAge) || 0,
+    triggers: Array.isArray(triggers) ? triggers : [],
     reservations: [],
     image,
   }

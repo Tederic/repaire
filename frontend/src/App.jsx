@@ -84,6 +84,18 @@ const getDiscordAvatarUrl = (account) => {
   return `https://cdn.discordapp.com/embed/avatars/${fallbackIndex}.png`
 }
 
+const triggerWarnings = [
+  'Gore & torture',
+  'Mort & suicide',
+  'Violence sexuelle ⚠️',
+  'Violence envers les enfants',
+  'Oppression & discrimination',
+  'Perte de contrôle / contrôle mental',
+  'Folie & troubles mentaux',
+  'Horreur & infection',
+  'Maltraitance animale',
+]
+
 const tabs = [
   { id: 'all', label: 'Toute la semaine' },
   { id: 'friday', label: 'Vendredi' },
@@ -234,6 +246,8 @@ const normalizeTable = (table) => {
     seatsTaken: Number(table.seatsTaken ?? table.seats_taken ?? 0) || 0,
     gm: table.gm || table.mj || 'MJ',
     status: table.status || 'open',
+    minAge: Number(table.minAge ?? table.min_age ?? 0) || 0,
+    triggers: Array.isArray(table.triggers) ? table.triggers : [],
     image: table.image || systemImages[system] || defaultImage,
     reservations: Array.isArray(table.reservations) ? table.reservations : [],
   }
@@ -277,7 +291,8 @@ function App() {
     game: '',
     type: 'one-shot',
     seatsTotal: 5,
-    description: '',
+    minAge: 16,
+    triggers: [],
     image: '',
   })
   const availableGames = useMemo(
@@ -842,7 +857,8 @@ function App() {
       game: '',
       type: 'one-shot',
       seatsTotal: 5,
-      description: '',
+      minAge: 16,
+      triggers: [],
       image: '',
     })
     setShowCreateTable(true)
@@ -867,7 +883,8 @@ function App() {
         type: formState.type,
         seatsTotal: Number(formState.seatsTotal),
         gm: user.name,
-        description: formState.description,
+        minAge: Number(formState.minAge),
+        triggers: formState.triggers || [],
         image,
       }
       const response = await fetch(buildApiUrl('/api/tables'), {
@@ -2231,20 +2248,55 @@ function App() {
                 />
               </label>
               <label className="text-sm text-slate-300">
-                Description courte
-                <textarea
-                  rows="3"
+                Âge minimum
+                <input
+                  type="number"
+                  min="0"
                   className="mt-1 w-full rounded-lg border border-white/10 bg-[#282520] px-3 py-2 text-white"
-                  value={formState.description}
+                  value={formState.minAge}
                   onChange={(event) =>
                     setFormState((prev) => ({
                       ...prev,
-                      description: event.target.value,
+                      minAge: event.target.value,
                     }))
                   }
                   required
                 />
               </label>
+              <div className="rounded-xl border border-white/10 bg-[#221f1a] p-3">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  Trigger warnings
+                </p>
+                <div className="mt-2 grid gap-2">
+                  {triggerWarnings.map((warning) => {
+                    const checked = formState.triggers.includes(warning)
+                    return (
+                      <label
+                        key={warning}
+                        className="flex items-center gap-2 text-xs text-slate-200"
+                      >
+                        <input
+                          type="checkbox"
+                          className="size-4 rounded border-white/10 bg-[#282520]"
+                          checked={checked}
+                          onChange={(event) => {
+                            const isChecked = event.target.checked
+                            setFormState((prev) => ({
+                              ...prev,
+                              triggers: isChecked
+                                ? [...prev.triggers, warning]
+                                : prev.triggers.filter(
+                                    (item) => item !== warning,
+                                  ),
+                            }))
+                          }}
+                        />
+                        {warning}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
               <button
                 type="submit"
                 disabled={creating}
