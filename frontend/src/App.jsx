@@ -283,6 +283,7 @@ function App() {
   const [campaignErrors, setCampaignErrors] = useState({})
   const [campaignUsers, setCampaignUsers] = useState([])
   const [campaignUsersLoading, setCampaignUsersLoading] = useState(false)
+  const [adminCampaignsOpen, setAdminCampaignsOpen] = useState(false)
   const prevTablesRef = useRef([])
   const notificationsInitialized = useRef(false)
   const [formState, setFormState] = useState({
@@ -291,7 +292,7 @@ function App() {
     game: '',
     type: 'one-shot',
     seatsTotal: 5,
-    minAge: 16,
+    minAge: 0,
     triggers: [],
     image: '',
   })
@@ -733,6 +734,16 @@ function App() {
     setCampaignMemberDrafts((prev) => ({ ...prev, [campaignId]: '' }))
   }
 
+  const handleDeleteCampaign = (campaignId) => {
+    const confirmed = window.confirm(
+      'Supprimer définitivement cette campagne ?',
+    )
+    if (!confirmed) {
+      return
+    }
+    setCampaigns((prev) => prev.filter((campaign) => campaign.id !== campaignId))
+  }
+
   const handleJoin = async (tableId) => {
     try {
       setJoiningId(tableId)
@@ -805,20 +816,20 @@ function App() {
   }
 
   const handleCancelTable = async (tableId) => {
+    const confirmed = window.confirm(
+      'Supprimer définitivement cette table ? Cette action est irréversible.',
+    )
+    if (!confirmed) {
+      return
+    }
     try {
-      const response = await fetch(
-        buildApiUrl(`/api/tables/${tableId}/cancel`),
-        {
-          method: 'POST',
-        },
-      )
-      if (!response.ok) {
-        throw new Error('Cancel failed')
+      const response = await fetch(buildApiUrl(`/api/tables/${tableId}`), {
+        method: 'DELETE',
+      })
+      if (!response.ok && response.status !== 204) {
+        throw new Error('Delete failed')
       }
-      const updated = normalizeTable(await response.json())
-      setTables((prev) =>
-        prev.map((table) => (table.id === updated.id ? updated : table)),
-      )
+      setTables((prev) => prev.filter((table) => table.id !== tableId))
     } catch (error) {
       // Ignore for MVP
     }
@@ -857,7 +868,7 @@ function App() {
       game: '',
       type: 'one-shot',
       seatsTotal: 5,
-      minAge: 16,
+      minAge: 0,
       triggers: [],
       image: '',
     })
@@ -1748,11 +1759,24 @@ function App() {
                     <h3 className="text-lg font-bold tracking-tight">
                       Tables actuelles
                     </h3>
-                    {loading && (
-                      <span className="text-xs text-slate-400">
-                        Chargement…
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="rounded-full border border-white/10 bg-[#282520] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-300"
+                        onClick={() =>
+                          setAdminCampaignsOpen((prev) => !prev)
+                        }
+                      >
+                        {adminCampaignsOpen
+                          ? 'Masquer campagnes'
+                          : 'Voir campagnes'}
+                      </button>
+                      {loading && (
+                        <span className="text-xs text-slate-400">
+                          Chargement…
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-3">
                     {loading ? (
@@ -1812,9 +1836,8 @@ function App() {
                                 type="button"
                                 className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
                                 onClick={() => handleCancelTable(table.id)}
-                                disabled={table.status === 'cancelled'}
                               >
-                                Clôturer
+                                Supprimer
                               </button>
                               <button
                                 type="button"
@@ -1886,6 +1909,57 @@ function App() {
                     )}
                   </div>
                 </section>
+
+                {adminCampaignsOpen && (
+                  <section className="px-4 pt-2">
+                    <div className="flex items-center justify-between pb-2 pt-2">
+                      <h3 className="text-lg font-bold tracking-tight">
+                        Campagnes en cours
+                      </h3>
+                      <span className="text-xs text-slate-400">
+                        {campaigns.length} campagne
+                        {campaigns.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {campaigns.length === 0 ? (
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
+                          Aucune campagne pour le moment.
+                        </div>
+                      ) : (
+                        campaigns.map((campaign) => (
+                          <div
+                            key={`admin-campaign-${campaign.id}`}
+                            className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-bold text-white">
+                                  {campaign.name}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  Créée par {campaign.ownerName || 'MJ'}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                className="rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-300"
+                                onClick={() => handleDeleteCampaign(campaign.id)}
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                            {campaign.description ? (
+                              <p className="mt-2 text-xs text-slate-300">
+                                {campaign.description}
+                              </p>
+                            ) : null}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 <section className="px-4 pb-10 pt-6">
                   <div className="flex items-center justify-between pb-2">
@@ -2298,6 +2372,7 @@ function App() {
                   }
                   required
                 >
+                  <option value={0}>Tout public</option>
                   <option value={12}>12+</option>
                   <option value={16}>16+</option>
                   <option value={18}>18+</option>
